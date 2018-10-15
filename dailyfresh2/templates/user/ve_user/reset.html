@@ -1,0 +1,68 @@
+
+
+
+
+{%extends 'base_foot.html'%}
+
+{%block head%}
+  <style>
+
+      .login_form_bgn{
+          height:480px;
+      }
+      .login_form_wrap{
+          width:400px;
+      }
+      .login_form{
+          width:420px;
+          height: 410px;
+      }
+      .login_title{
+          width:220px;
+      }
+      .login_title h1{
+          font-size:25px;
+          color:#47aa34;
+      }
+      .name_input,.pass_input{
+          width:320px;
+          height:50px;
+      }
+      .name_input{
+           top:28px;
+           background-position:280px -95px;
+      }
+      .pass_input{
+          top:110px;
+      }
+      .error_msg{width:300px;height:30px;color:red;text-align: center;line-height: 30px;}
+  </style>
+{%endblock head%}
+
+{%block body%}
+	<div class="login_top clearfix">
+		<a href="index.html" class="login_logo"><img src="/static/images/logo02.png"></a>
+	</div>
+    <div class="login_form_bgn">
+		<div class="login_form_wrap clearfix">
+            <div class="login_form fr">
+                <div class="login_title clearfix">
+                    <h1>重置密码</h1>
+                </div>
+                <div class="form_input">
+                    <form method="post" action="/user/modify">
+                        {% csrf_token %}
+                        <input type="password" name="newpwd1"  class="name_input" placeholder="新密码至少8位">
+                        <input type="password" name="newpwd2" class="pass_input" placeholder="确认新密码至少8位">
+                        <div class="error_msg">{{error_msg}}</div>
+                        <input type="submit" name="" value="确认" class="input_submit">
+                    </form>
+                </div>
+            </div>
+    	</div>
+	</div>
+
+{%endblock body%}
+
+
+
