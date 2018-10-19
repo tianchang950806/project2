@@ -1,0 +1,63 @@
+
+
+{%extends 'base_foot.html'%}
+
+{%block head%}
+  <style>
+
+      .login_form_bgn{
+          height:480px;
+      }
+      .login_form_wrap{
+          width:400px;
+      }
+      .login_form{
+          width:420px;
+          height: 410px;
+      }
+      .login_title{
+          width:220px;
+      }
+      .login_title h1{
+          font-size:25px;
+          color:#47aa34;
+      }
+      .name_input,.pass_input{
+          width:320px;
+          height:50px;
+      }
+      .name_input{
+           top:28px;
+      }
+      .pass_input{
+          top:110px;
+      }
+  </style>
+{%endblock head%}
+
+{%block body%}
+	<div class="login_top clearfix">
+		<a href="index.html" class="login_logo"><img src="/static/images/logo02.png"></a>
+	</div>
+    <div class="login_form_bgn">
+		<div class="login_form_wrap clearfix">
+            <div class="login_form fr">
+                <div class="login_title clearfix">
+                    <h1>忘记密码</h1>
+                </div>
+                <div class="form_input">
+                    <form method="post" action="/user/forget">
+                        {% csrf_token %}
+                        <input type="text" name="uname"  class="name_input" placeholder="请输入用户名">
+                        <input type="text" name="uemail" class="pass_input" placeholder="请输入邮箱">
+                        <input type="submit" name="" value="确认发送验证邮件" class="input_submit">
+                    </form>
+                </div>
+            </div>
+    	</div>
+	</div>
+
+{%endblock body%}
+
+
+
