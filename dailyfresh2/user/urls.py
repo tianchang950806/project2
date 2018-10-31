@@ -17,7 +17,7 @@ urlpatterns = [
     url(r'^logout$',views.LogOutView.as_view(),name='logout'),
 
     url(r'^info$',views.UserInfoView.as_view(),name='info'),  #用户信息页
-    url(r'^order$',views.UserOrderView.as_view(),name='order'),#用户订单页
+    url(r'^order/(?P<page>\d+)$',views.UserOrderView.as_view(),name='order'),#用户订单页
     url(r'^site$',views.UserSiteView.as_view(),name='site'), #用户收货地址页
     url(r'^site_handle$',views.UserSiteHandleView.as_view(),name='site_handle'),
 

@@ -1,6 +1,7 @@
 from django.db import models
 from db.base_model import BaseModel
 from tinymce.models import HTMLField
+from fdfs_client.client import Fdfs_client
 
 class GoodsType(BaseModel):
     '''商品类型模型类'''
@@ -65,7 +66,8 @@ class GoodsImage(BaseModel):
         db_table='df_goods_image'
         verbose_name = '商品图片'
         verbose_name_plural = verbose_name
-
+    def __str__(self):
+        return self.sku.name
 
 
 class IndexGoodsBanner(BaseModel):
@@ -99,6 +101,7 @@ class IndexTypeGoodsBanner(BaseModel):
         verbose_name_plural = verbose_name
     def __str__(self):
         return self.sku.name
+
 class IndexPromotionBanner(BaseModel):
     '''首页促销活动模型类'''
     name = models.CharField(max_length=20, verbose_name='活动名称')
@@ -111,6 +114,8 @@ class IndexPromotionBanner(BaseModel):
         verbose_name_plural = verbose_name
     def __str__(self):
         return self.name
+
+
 
 
 

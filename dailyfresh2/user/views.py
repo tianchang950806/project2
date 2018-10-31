@@ -13,7 +13,10 @@ from django.http import *
 import re
 import random
 from django.core.serializers import serialize
-
+from redis import *
+from goods.models import GoodsSKU
+from order.models import OrderInfo,OrderGoods
+from django.core.paginator import Paginator
 
 
 class RegisterView(View):
@@ -79,6 +82,7 @@ class RegisterView(View):
         html_message='<h1>%s,欢迎你成为天天生鲜注册会员</h1>请点击下面链接激活您的账户</br><a href="%s">%s</a>'%(uname,encryption_url,encryption_url)  #html内容
 
         #发送
+        #调用celery task
         task_send_mail.delay(subject, message,sender,receiver,html_message)
         # 注册成功转向登录页面
         return redirect(reverse('user:login'))
@@ -133,7 +137,7 @@ class LoginView(View):
                if next_url:
                    resp=redirect(next_url)
                else:
-                   resp=render(request,'goods/index.html')
+                   resp=redirect('/goods/index')
                if remember == '1':
                    resp.set_cookie('remember_uname', username, 3600 * 24 * 7)
                else:
@@ -265,17 +269,76 @@ class LogOutView(View):
 class UserInfoView(LoginRequiredMixin,View):
     def get(self,request):
         user=request.user
+        #读取历史记录
+        #连接redis
+        conn=StrictRedis('192.168.12.191')
+        #获取用户历史记录的id
+        history=conn.lrange('history_%d'%user.id,0,-1)
+
+        # goodskus=GoodsSKU.objects.filter(id__in=history)
+
+        goodskus=[]
+        for hid in history:
+            good=GoodsSKU.objects.get(id=hid)
+            goodskus.append(good)
+
+
         try:
             address=Address.objects.get(user=user,is_default=True)
         except Address.DoesNotExist:
             address = None
-        context={'title': '天天生鲜订单页面', 'page_name': 1,'page':1,'address':address}
+        context={'title': '天天生鲜订单页面', 'page_name': 1,'page':1,'address':address,'goodskus':goodskus}
         return render(request,'user/user_center_info.html',context)
 
 
 class UserOrderView(LoginRequiredMixin,View):
-    def get(self,request):
-        context = {'title':'天天生鲜订单页面','page_name':1,'page':2}
+    def get(self,request,page):
+        #获取用户订单信息
+        user=request.user
+        orders=OrderInfo.objects.filter(user=user).order_by('-create_time')
+        for order in orders:
+            order_skus=OrderGoods.objects.filter(order_id=order.order_id)
+            for order_sku in order_skus:
+                #计算小计
+                amount=order_sku.count*order_sku.price
+                #动态给order_sku增加属性，保存订单商品的小计
+                order_sku.amount=amount
+            # 动态给order增加属性，保存订单商品的信息
+            order.order_skus=order_skus
+
+        # 对数据进行分页
+        paginator = Paginator(orders, 1)
+        try:
+            page=int(page)
+        except Exception as e:
+            page=1
+
+        if page>paginator.num_pages:
+            page=1
+        #获取第page的Page实例对象
+        order_page = paginator.page(page)
+
+        #todo:进行页码的控制，页面上最多显示５个页码
+        #1.总页数小于５页，页面上显示所有页码
+        #2.如果当前页是前３页，显示１-5页
+        #3.如果当前页是后３页，显示后５页
+        #4.其他情况，显示当页的前２页　当页的后２页
+        num_pages=paginator.num_pages
+        if num_pages<5:
+            pages=range(1,num_pages+1)
+        elif page<=3:
+            pages=range(1,6)
+        elif num_pages-page<=2:
+            pages=range(num_pages-4,num_pages+1)
+        else:
+            pages=range(page-2,page+3)
+
+        context = {'title':'天天生鲜订单页面',
+                   'page_name':1,
+                   'page':2,
+                   'pages':pages,
+                   'order_page':order_page,
+                   }
         return render(request,'user/user_center_order.html',context)
 
 
@@ -373,8 +436,10 @@ class UserInsertView(LoginRequiredMixin,View):
 class UserEditView(LoginRequiredMixin,View):
     def get(self,request):
         id=request.GET.get('id')
+        order = request.GET.get('order', '')
+
         address = Address.objects.get(id=id)
-        context = {'title': '编辑地址页面', 'page_name': 1, 'page': 3,'address':address}
+        context = {'title': '编辑地址页面', 'page_name': 1, 'page': 3,'address':address,'order':order}
         return render(request, 'user/edit_address.html', context)
     def post(self,request):
         aid = request.POST.get('aid')
@@ -385,6 +450,7 @@ class UserEditView(LoginRequiredMixin,View):
         pro_id = request.POST.get('pro_id','')
         city_id = request.POST.get('city_id','')
         dis_id = request.POST.get('dis_id','')
+        order=request.POST.get('order','')
         try:
             pro = AreaInfo.objects.filter(id=pro_id)[0]
             city = AreaInfo.objects.filter(id=city_id)[0]
@@ -403,7 +469,10 @@ class UserEditView(LoginRequiredMixin,View):
         address.zip_code=ucode
         address.phone=uphone
         address.save()
-        return redirect('/user/site')
+        if order:
+            return redirect('/order/place')
+        else:
+            return redirect('/user/site')
 
 #删除地址类
 class UserDeleteView(LoginRequiredMixin,View):
@@ -413,22 +482,13 @@ class UserDeleteView(LoginRequiredMixin,View):
         return redirect('/user/site')
 
 
-
-
-
 def pro(request):
-    print(pro)
     prolist=AreaInfo.objects.filter(parea__isnull=True)
     area=serialize('json',prolist,fields=['id','title'])
     return JsonResponse({'area':area})
 
-
 def city(request,id):
-    print(id)
-    pro=AreaInfo.objects.filter(id=id)[0]
-    print(pro)
     citylist=AreaInfo.objects.filter(parea_id=id)
-    print(citylist)
     list=[]
     for i in citylist:
         d={}
@@ -436,8 +496,6 @@ def city(request,id):
         d['title']=i.title
         list.append(d)
     return JsonResponse({'area': list})
-
-
 
 
 

@@ -45,6 +45,7 @@
 			<form method="post" action="/user/edit">
 				{% csrf_token %}
 				 <input type="hidden" value="{{address.id}}" name="aid">
+				 <input type="hidden" value="{{order}}" name="order">
 				<div class="form_group">
 					<label>收件人：</label>
 					<input type="text" name="receiver" value="{{address.receiver}}">

@@ -1,4 +1,50 @@
 {%extends 'goods/base.html'%}
+{%block head%}
+<script type="text/javascript" src="/static/js/jquery.imagezoom.min.js"></script>
+
+<script>
+		$.get('/cart/count',function (data) {
+		total_count=data['total_count']
+		    $('#show_count').html(total_count)
+    })
+</script>
+<script type="text/javascript">
+			$(document).ready(function(){
+				$(".jqzoom").imagezoom();
+				$("#thumblist li a").click(function(){
+					//增加点击的li的class:tb-selected，去掉其他的tb-selecte
+					$(this).parents("li").addClass("tb-selected").siblings().removeClass("tb-selected");
+					//赋值属性
+					$(".jqzoom").attr('src',$(this).find("img").attr("mid"));
+					$(".jqzoom").attr('rel',$(this).find("img").attr("big"));
+				});
+			});
+</script>
+<style type="text/css">
+/* box */
+.box{width:610px;margin:0 auto;}
+.tb-pic a{display:table-cell;text-align:center;vertical-align:middle;}
+.tb-pic a img{vertical-align:middle;}
+.tb-pic a{*display:block;*font-family:Arial;*line-height:1;}
+.tb-thumb{margin:10px 0 0;overflow:hidden;}
+.tb-thumb li{background:none repeat scroll 0 0 transparent;float:left;height:42px;margin:0 6px 0 0;overflow:hidden;padding:1px;}
+.tb-s310, .tb-s310 a{height:310px;width:310px;}
+.tb-s310, .tb-s310 img{max-height:310px;max-width:310px;}
+.tb-s310 a{*font-size:271px;}
+.tb-s40 a{*font-size:35px;}
+.tb-s40, .tb-s40 a{height:40px;width:40px;}
+.tb-booth{border:1px solid #CDCDCD;position:relative;z-index:1;}
+.tb-thumb .tb-selected{background:none repeat scroll 0 0 #C30008;height:40px;padding:2px;}
+.tb-thumb .tb-selected div{background-color:#FFFFFF;border:medium none;}
+.tb-thumb li div{border:1px solid #CDCDCD;}
+.zoomDiv{z-index:999;position:absolute;top:0px;left:0px;width:180px;height:180px;background:#ffffff;border:1px solid #CCCCCC;display:none;text-align:center;overflow:hidden;}
+.zoomMask{position:absolute;background:url("/static/images/mask.png") repeat scroll 0 0 transparent;cursor:move;z-index:1;}
+#img_small{
+    width: 40px;
+}
+
+</style>
+{%endblock head%}
 {% block detail %}
 <div class="breadcrumb">
 		<a href="#">全部分类</a>
@@ -9,28 +55,51 @@
 	</div>
 
 <div class="goods_detail_con clearfix">
-		<div class="goods_detail_pic fl"><img src="/static/images/goods_detail.jpg"></div>
+		<div class="goods_detail_pic fl">
+         <div class="box">
+			<div class="tb-booth tb-pic tb-s310">
+			<a href="{{ sku.image.url }}"><img src="{{ sku.image.url }}" alt="{{ sku.name }}" rel="{{ sku.image.url }}" class="jqzoom" /></a>
+			</div>
+			<ul class="tb-thumb" id="thumblist">
+                {% for img in news_SKU %}
+                <li {% if forloop.first %}class="tb-selected"{% endif %}><div class="tb-pic tb-s40"><a href="javascript:"><img src="{{ img.image.url }}" mid="{{ img.image.url }}" big="{{ img.image.url }}" id="img_small"></a></div></li>
+                {% endfor %}
+			</ul>
+		</div>
+		</div>
 
 		<div class="goods_detail_list fr">
-			<h3>大兴大棚草莓</h3>
-			<p>草莓浆果柔软多汁，味美爽口，适合速冻保鲜贮藏。草莓速冻后，可以保持原有的色、香、味，既便于贮藏，又便于外销。</p>
+			<h3>{{sku.name}}</h3>
+			<p>{{sku.desc}}</p>
 			<div class="prize_bar">
-				<span class="show_pirze">¥<em>16.80</em></span>
-				<span class="show_unit">单  位：500g</span>
+				<span class="show_pirze">¥<em>{{sku.prince}}</em></span>
+				<span class="show_unit">单  位：{{sku.unite}}</span>
 			</div>
+			<form method="post" action="/order/place/">
+				{% csrf_token %}
 			<div class="goods_num clearfix">
 				<div class="num_name fl">数 量：</div>
 				<div class="num_add fl">
-					<input type="text" class="num_show fl" value="1">
-					<a href="javascript:;" class="add fr">+</a>
-					<a href="javascript:;" class="minus fr">-</a>
+					<input type="text" class="num_show fl" id="num_show" name="sku_count" value="1">
+					<a href="javascript:;" class="add fr" id="add">+</a>
+					<a href="javascript:;" class="minus fr" id="minus">-</a>
 				</div>
 			</div>
-			<div class="total">总价：<em>16.80元</em></div>
-			<div class="operate_btn">
-				<a href="javascript:;" class="buy_btn">立即购买</a>
-				<a href="javascript:;" class="add_cart" id="add_cart">加入购物车</a>
+			<div>
+				<p>其它规格：</p>
+				<ul>
+					{% for sku in same_spu_skus%}
+					<li><a href="{% url 'goods:detail' sku.id%}">{{sku.name}}</a></li>
+					{%endfor%}
+				</ul>
 			</div>
+			<div class="total">总价：<em>16.80</em>元</div>
+				<div class="operate_btn">
+					<input type="hidden" name="sku_ids" value="{{sku.id}}">
+					<input type="submit" name="" class="buy_btn" value="立即购买">
+					<a href="javascript:;" class="add_cart" id="add_cart" sku_id="{{sku.id}}">加入购物车</a>
+				</div>
+	       </form>
 		</div>
 	</div>
 {% endblock detail %}
@@ -38,45 +107,188 @@
 {% block left %}
 <div class="r_wrap fr clearfix">
 			<ul class="detail_tab clearfix">
-				<li class="active">商品介绍</li>
-				<li>评论</li>
+				<li  id="tag_detail" class="active">商品介绍</li>
+				<li  id="tag_comment">评论</li>
 			</ul>
 
-			<div class="tab_content">
+			<div class="tab_content" id="tab_detail">
 				<dl>
-					<dt>商品详情：</dt>
-					<dd>草莓采摘园位于北京大兴区 庞各庄镇四各庄村 ，每年1月-6月面向北京以及周围城市提供新鲜草莓采摘和精品礼盒装草莓，草莓品种多样丰富，个大香甜。所有草莓均严格按照有机标准培育，不使用任何化肥和农药。草莓在采摘期间免洗可以直接食用。欢迎喜欢草莓的市民前来采摘，也欢迎各大单位选购精品有机草莓礼盒，有机草莓礼盒是亲朋馈赠、福利送礼的最佳选择。 </dd>
+					<dt>商品详情：{{ sku.goods.detail|safe }}</dt>
+					<dd> </dd>
 				</dl>
 			</div>
+	        <div class="tab_content" id="tab_comment" style="display: none;">
+				<dt>评论:</dt>
+				{% for order in sku_orders %}
+				<dl>
+					<dt>{{order.comment}}</dt>
+                    <dd>{{ order.username }}</dd>
+					<dd> 评论时间：{{ order.ctime }}</dd>
+				</dl>
+				<hr/>
+				{% endfor %}
+				　<div class="com">
+					 <dl>
+					 </dl>
+				　</div>
+				 <dt>
+					 <textarea id="site_area" name="comment"></textarea>
+					 <input type="button"  name="" value="回复评论" class="reply">
+					 <a href="javascript:;" id="check" >查看更多评论>></a>
+				</dt>
+				<dl>
+                </dl>
+			</div>
 
-		</div>
-	</div>
+</div>
+
 {% endblock left %}
 
 {%block foot%}
-
 <div class="add_jump"></div>
+<script>
 
-	<script type="text/javascript" src="js/jquery-1.12.2.js"></script>
-	<script type="text/javascript">
-		var $add_x = $('#add_cart').offset().top;
-		var $add_y = $('#add_cart').offset().left;
+	 $("#tag_detail").click(function () {
+            $("#tag_comment").removeClass("active");
+            $(this).addClass("active");
+            $("#tab_comment").hide();
+            $("#tab_detail").show();
+        });
+        $("#tag_comment").click(function () {
+            $("#tag_detail").removeClass("active");
+            $(this).addClass("active");
+            $("#tab_detail").hide();
+            $("#tab_comment").show();
+        });
 
-		var $to_x = $('#show_count').offset().top;
-		var $to_y = $('#show_count').offset().left;
+</script>
+<script>
 
-		$(".add_jump").css({'left':$add_y+80,'top':$add_x+10,'display':'block'})
-		$('#add_cart').click(function(){
-			$(".add_jump").stop().animate({
-				'left': $to_y+7,
+      $("#add").click(function(){
+        var num_show = $("#num_show").val();
+        num_show = parseInt(num_show);
+        num_show += 1;
+        $("#num_show").val(num_show);
+        var price = $(".show_pirze>em").html();
+        price = parseFloat(price);
+        var total = price * num_show;
+        $(".total>em").html(total.toFixed(2));
+    });
+    　$("#minus").click(function(){
+        var num_show = $("#num_show").val();
+        num_show = parseInt(num_show);
+        num_show -= 1;
+        if (num_show < 1){
+            num_show = 1;
+        }
+        $("#num_show").val(num_show);
+        var price = $(".show_pirze>em").html();
+        price = parseFloat(price);
+        var total = price * num_show;
+        $(".total>em").html(total.toFixed(2));
+    });
+
+	　$("#num_show").blur(function () {
+		var num_show = $(this).val();
+		num_show = parseInt(num_show);
+		var price = $(".show_pirze>em").html();
+        price = parseFloat(price);
+        var total = price * num_show;
+        $(".total>em").html(total.toFixed(2));
+
+    })
+
+</script>
+
+<script>
+	var $add_x = $('#add_cart').offset().top;
+	var $add_y = $('#add_cart').offset().left;
+
+	var $to_x = $('#show_count').offset().top;
+	var $to_y = $('#show_count').offset().left;
+
+	$('#add_cart').click(function () {
+
+			    //获取商品id和商品数量
+		sku_id=$(this).attr('sku_id')
+		count=$('.num_show').val()
+        csrf=$('input[name="csrfmiddlewaretoken"]').val()
+		//组织参数
+		params={'sku_id':sku_id,'count':count,'csrfmiddlewaretoken':csrf}
+		//发起ajax　post请求 ,访问/cart/add　　传递参数：sku_id,count
+		$.post('/cart/add',params,function(data) {
+
+     		if(data.res==5){
+		    // 添加到购物车成功动画
+			$(".add_jump").css({'left':$add_y+80,'top':$add_x+10,'display':'block'});
+
+		    $(".add_jump").stop().animate({
+			'left': $to_y+7,
 				'top': $to_x+7},
 				"fast", function() {
 					$(".add_jump").fadeOut('fast',function(){
-						$('#show_count').html(2);
+					    //重新设置用户购物车中商品的条数
+						$('#show_count').html(data.total_count);
 					});
+		});
+			}
+			else{
+		    //添加失败
+				// 其他错误信息，alert展示
+				alert(data.errmsg);
+			}
+        });
 
-			});
+    });
+</script>
+
+<script>
+	$('.reply').click(function () {
+		$.ajax({
+			"url":'/comment/recover/{{sku.id}}',
+			"data":{
+			    "comment":$('#site_area').val()
+			},
+			"success":function (data) {
+				console.log(data['ret'])
+				$.each(data['ret'],function (index,item) {
+					$('.com dl').append('<dt>回复内容：</dt>')
+					$('.com dl').append("<dd>"+item['comment']+"</dd>")
+					$('.com dl').append("<dd>"+item['username']+" "+item['create_time']+"</dd>")
+
+
+                })
+            }
 		})
-	</script>
+    })
+	
+	$('#check').click(function () {
+		$.ajax({
+			"url":'/comment/check/{{sku.id}}',
+			"data":{
+			    "comment":$('#site_area').val()
+			},
+			"success":function (data) {
+				console.log(data['ret'])
+				if (data['ret'].length!=0){
+				    $.each(data['ret'],function (index,item) {
+					$('.com dl').append('<dt>回复内容：</dt>')
+					$('.com dl').append("<dd>"+item['comment']+"</dd>")
+					$('.com dl').append("<dd>"+item['username']+" "+item['create_time']+"</dd>")
+                })
+				}
+				else{
+				    $('.com dl').append('<dt>暂无评论</dt>')
+				}
+
+            }
+		})
+    })
+</script>
+
+<script>
+
+</script>
+
 {%endblock foot%}
 

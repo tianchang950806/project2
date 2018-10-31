@@ -17,10 +17,12 @@ from django.conf.urls import include, url
 from django.contrib import admin
 
 urlpatterns = [
-    url(r'^admin/', include(admin.site.urls)),
-    url(r'^user/', include('user.urls', namespace='user')),
-    url(r'^goods/', include('goods.urls',namespace='goods')),
+    url(r'^admin/', include(admin.site.urls)), #后台管理
+    url(r'^user/', include('user.urls', namespace='user')),#用户模块
+    url(r'^goods/', include('goods.urls',namespace='goods')),#商品模块
     url(r'^order/', include('order.urls',namespace='order')),
     url(r'^cart/', include('cart.urls',namespace='cart')),
-    url(r'^tinymce/', include('tinymce.urls')),
+    url(r'^tinymce/', include('tinymce.urls')),#富文本编辑器
+    url(r'^search/', include('haystack.urls')), #全文搜索
+    url(r'^comment/', include('comment.urls',namespace='comment')),#用户评论
 ]

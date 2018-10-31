@@ -8,6 +8,7 @@ class FDFSStorage(Storage):
         '''初始化'''
         self.client_conf=settings.FDFS_CLIENT_CONF
         self.base_url=settings.FDFS_URL
+
     def _open(self,name,mode='rb'):
         '''打开文件时使用'''
         pass
@@ -18,6 +19,7 @@ class FDFSStorage(Storage):
 
         #创建一个Fdfs_client对象
         client=Fdfs_client(self.client_conf)
+
 
         #上传文件到fast_dfs系统中
         res=client.upload_by_buffer(content.read())
@@ -32,7 +34,7 @@ class FDFSStorage(Storage):
         #  'Uploaded size': '11.29KB'}
 
 
-        if res.get('Status')!='Upload successed':
+        if res.get('Status')!='Upload successed.':
             #上传失败
             raise Exception('上传文件FastDFS失败')
 
@@ -46,3 +48,7 @@ class FDFSStorage(Storage):
     def url(self,name):
         '''返回访问文件的url路径'''
         return self.base_url+name
+
+
+
+

@@ -23,9 +23,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'z(s2pe6pqdkj)oqu$(pz0cvr1^_uj!281$9q0x_fv!m3coqyas'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -40,12 +40,15 @@ INSTALLED_APPS = (
     'user',
     'goods',
     'tinymce',
+    'haystack',
+    'order',
+    'comment',
 )
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -93,15 +96,16 @@ DATABASES = {
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
 USE_L10N = True
 
 USE_TZ = True
+
+LANGUAGE_CODE = 'zh-Hans'
+
+TIME_ZONE = 'Asia/Shanghai'
 
 
 # Static files (CSS, JavaScript, Images)
@@ -145,15 +149,57 @@ LOGIN_URL='/user/login'
 
 
 #添加编辑器
+
+
 TINYMCE_DEFAULT_CONFIG = {
     'theme': 'advanced',
     'width': 600,
     'height': 400,
 }
 
+
 #FastDFS设置－自定义存储的类
 DEFAULT_FILE_STORAGE='utils.fdfs.storage_util.FDFSStorage'
 #FastDFS设置－客户端配置文件
-FDFS_CLIENT_CONF='util/fdfs/client.conf'
+FDFS_CLIENT_CONF='utils/fdfs/client.conf'
 #FastDFS设置－url
 FDFS_URL='http://192.168.12.191:9999/'
+
+
+
+#设置缓存,将cache存到redis中
+CACHES = {
+    "default": {
+        "BACKEND": "redis_cache.cache.RedisCache",
+        "LOCATION": "redis://192.168.12.191:6379/4",
+        'TIMEOUT': 60,
+    },
+}
+
+
+#全文检索
+#haystack框架
+#whoosh：纯Python编写的全文搜索引擎
+#jieba中文分词包
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        #使用whoosh引擎
+        'ENGINE': 'haystack.backends.whoosh_cn_backend.WhooshEngine',
+        #索引文件路径
+        'PATH': os.path.join(BASE_DIR, 'whoosh_index'),
+    }
+}
+
+#当添加、修改、删除数据时，自动生成索引
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+
+
+#配置连接redis的对象
+from redis import StrictRedis
+REDIS_CONN=StrictRedis('192.168.12.191')
+
+
+
+#配置收集静态文件的路径
+STATIC_ROOT='/var/www/dailyfresh2/static/'
+STATIC_URL='/static/'
